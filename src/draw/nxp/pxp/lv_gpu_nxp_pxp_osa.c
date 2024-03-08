@@ -42,7 +42,7 @@
     #include "semphr.h"
 #endif
 
-#if defined(SDK_OS_ZEPHYR)
+#if defined(__ZEPHYR__)
 #include <zephyr/kernel.h>
 #endif
 
@@ -85,7 +85,7 @@ static void _lv_gpu_nxp_pxp_wait(void);
 #if defined(SDK_OS_FREE_RTOS)
     static SemaphoreHandle_t s_pxpIdleSem;
 #endif
-#if defined(SDK_OS_ZEPHYR)
+#if defined(__ZEPHYR__)
     static K_SEM_DEFINE(s_pxpIdleSem, 0, 1);
 #endif
 static volatile bool s_pxpIdle;
@@ -116,7 +116,7 @@ void PXP_IRQHandler(void)
 #if defined(SDK_OS_FREE_RTOS)
         xSemaphoreGiveFromISR(s_pxpIdleSem, &taskAwake);
         portYIELD_FROM_ISR(taskAwake);
-#elif defined(SDK_OS_ZEPHYR)
+#elif defined(__ZEPHYR__)
         k_sem_give(&s_pxpIdleSem);
 #else
         s_pxpIdle = true;
@@ -154,7 +154,7 @@ static void _lv_gpu_nxp_pxp_interrupt_deinit(void)
     NVIC_DisableIRQ(LV_GPU_NXP_PXP_IRQ_ID);
 #if defined(SDK_OS_FREE_RTOS)
     vSemaphoreDelete(s_pxpIdleSem);
-#elif defined(SDK_OS_ZEPHYR)
+#elif defined(__ZEPHYR__)
     k_sem_reset(&s_pxpIdleSem);
 #endif
 }
@@ -175,7 +175,7 @@ static void _lv_gpu_nxp_pxp_run(void)
  */
 static void _lv_gpu_nxp_pxp_wait(void)
 {
-#if defined(SDK_OS_FREE_RTOS) || defined(SDK_OS_ZEPHYR)
+#if defined(SDK_OS_FREE_RTOS) || defined(__ZEPHYR__)
     /* Return if PXP was never started, otherwise the semaphore will lock forever. */
     if(s_pxpIdle == true)
         return;
@@ -183,7 +183,7 @@ static void _lv_gpu_nxp_pxp_wait(void)
 #if defined (SDK_OS_FREE_RTOS)
     if(xSemaphoreTake(s_pxpIdleSem, portMAX_DELAY) == pdTRUE)
         s_pxpIdle = true;
-#elif defined(SDK_OS_ZEPHYR)
+#elif defined(__ZEPHYR__)
     if(k_sem_take(&s_pxpIdleSem, K_FOREVER) == 0)
         s_pxpIdle = true;
 #else
